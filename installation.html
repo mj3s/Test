@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Installation &#8212; PT3S 90.14.15.0.dev1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Usage" href="usage.html" />
+    <link rel="prev" title="Welcome to PT3S’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h1>
+<p>How to install PT3S using pip (on Windows):</p>
+<ol class="arabic simple">
+<li><p>Step: Open CMD</p></li>
+<li><p>Step: Type ‘pip install pt3s’</p></li>
+</ol>
+<span class="target" id="module-dxAndMxHelperFcts"></span><p>Created on Tue Jan 30 10:36:59 2024</p>
+<p>&#64;author: wolters</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dxAndMxHelperFcts.dxWithMx">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dxAndMxHelperFcts.</span></span><span class="sig-name descname"><span class="pre">dxWithMx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dxAndMxHelperFcts.html#dxWithMx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dxAndMxHelperFcts.dxWithMx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper for dx with attached mx</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="dxAndMxHelperFcts.dxWithMxError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dxAndMxHelperFcts.</span></span><span class="sig-name descname"><span class="pre">dxWithMxError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dxAndMxHelperFcts.html#dxWithMxError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dxAndMxHelperFcts.dxWithMxError" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dxAndMxHelperFcts.readDxAndMx">
+<span class="sig-prename descclassname"><span class="pre">dxAndMxHelperFcts.</span></span><span class="sig-name descname"><span class="pre">readDxAndMx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forceSir3sRead</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preventPklDump</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxRecords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mxsVecsResults2MxDf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dxAndMxHelperFcts.html#readDxAndMx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dxAndMxHelperFcts.readDxAndMx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads Model and Results.
+Args:</p>
+<blockquote>
+<div><dl>
+<dt>dbFile: modell.db3 or modell.mdb</dt><dd><p>Database: read into  ==&gt; Dx-Object
+Results: read into ==&gt; Mx-Object (corresponding M-1-0-1.1 results are read if available)</p>
+<blockquote>
+<div><p>corresponding := using SYSTEMKONFIG and VIEW_MODELLE the M-1-0-1.1 resultfile is determined</p>
+</div></blockquote>
+</dd>
+<dt>forceSir3sRead:</dt><dd><dl class="simple">
+<dt>False (default):</dt><dd><p>if dbFilename-dx.pkl     exists and is newer than               dbFile, dbFilename-dx.pkl     is read instead of dbFile
+if dbFilename-mx-….pkl exists and is newer than corresponding mxFile, dbFilename-mx-….pkl is read instead of mxFile
+if dbFilename-mx.pkl     exists and is newer than corresponding mxFile, dbFilename-mx.pkl     is read instead of constructing m</p>
+</dd>
+<dt>True:</dt><dd><p>dbFile is read even if dbFilename-dx.pkl     exists and is newer than               dbFile
+mxFile is read even if dbFilename-mx-….pkl exists and is newer than corresponding mxFile</p>
+</dd>
+</dl>
+</dd>
+<dt>preventPklDump:</dt><dd><dl class="simple">
+<dt>False (default):</dt><dd><p>if dbFile is read, dbFilename-dx.pkl     is written
+if mxFile is read, dbFilename-mx-….pkl is written
+if mxFile is read, dbFilename-m.pkl      is written</p>
+</dd>
+<dt>True:</dt><dd><p>no pklDumps are written; existing pklDumps are deleted</p>
+</dd>
+</dl>
+</dd>
+<dt>maxRecords:</dt><dd><p>None (default): read MX-Results 
+&gt;0: read MX-Results, but only maxRecord Times (use maxRecord=1 to read only STAT)
+0: do not read MX-Results</p>
+</dd>
+<dt>mxsVecsResults2MxDf:</dt><dd><p>None (default): mx.df contains no Results which in SIR 3S are called Vector-Results
+list with regExps for Vector-Results requested to be in mx.df; i.e. [‘ROHR~’,’’,…]
+Note that integrating Vector-Results in mx.df can increase mx.df’s memory-usage significantly; running out of physical memory available is possible …</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>dxWithMx-Object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="dxAndMxHelperFcts.readDxAndMxError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dxAndMxHelperFcts.</span></span><span class="sig-name descname"><span class="pre">readDxAndMxError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dxAndMxHelperFcts.html#readDxAndMxError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dxAndMxHelperFcts.readDxAndMxError" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">PT3S</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to PT3S’s documentation!</a></li>
+      <li>Next: <a href="usage.html" title="next chapter">Usage</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2024, 3S Consult GmbH.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/installation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
