@@ -1,0 +1,752 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dxAndMxHelperFcts &#8212; PT3S 90.14.15.0.dev1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for dxAndMxHelperFcts</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Tue Jan 30 10:36:59 2024</span>
+
+<span class="sd">@author: wolters</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">access</span><span class="p">,</span> <span class="n">R_OK</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">isfile</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>    
+
+<span class="kn">import</span> <span class="nn">importlib</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">import</span> <span class="nn">pickle</span>
+
+
+
+
+<span class="c1"># ---</span>
+<span class="c1"># --- PT3S Imports</span>
+<span class="c1"># ---</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;PT3S&#39;</span><span class="p">)</span>  
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;in MODULEFILE: __main__ Context:&#39;</span><span class="p">,</span><span class="s1">&#39;.&#39;</span><span class="p">))</span> 
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}{2:s}{3:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;in MODULEFILE: Not __main__ Context: &#39;</span><span class="p">,</span><span class="s1">&#39;__name__: &#39;</span><span class="p">,</span><span class="vm">__name__</span><span class="p">,</span><span class="s2">&quot; .&quot;</span><span class="p">))</span> 
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">PT3S</span> <span class="kn">import</span> <span class="n">Dx</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;ImportError: &#39;</span><span class="p">,</span><span class="s1">&#39;from PT3S import Dx - trying import Dx instead ... maybe pip install -e . is active ...&#39;</span><span class="p">))</span> 
+    <span class="kn">import</span> <span class="nn">Dx</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">PT3S</span> <span class="kn">import</span> <span class="n">Mx</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;ImportError: &#39;</span><span class="p">,</span><span class="s1">&#39;from PT3S import Mx - trying import Mx instead ... maybe pip install -e . is active ...&#39;</span><span class="p">))</span> 
+    <span class="kn">import</span> <span class="nn">Mx</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">PT3S</span> <span class="kn">import</span> <span class="n">dxDecodeObjsData</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">dxDecodeObjsData</span>
+
+
+<div class="viewcode-block" id="dxWithMxError"><a class="viewcode-back" href="../functions.html#dxAndMxHelperFcts.dxWithMxError">[docs]</a><span class="k">class</span> <span class="nc">dxWithMxError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="dxWithMx"><a class="viewcode-back" href="../functions.html#dxAndMxHelperFcts.dxWithMx">[docs]</a><span class="k">class</span> <span class="nc">dxWithMx</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper for dx with attached mx</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">dx</span><span class="p">,</span><span class="n">mx</span><span class="p">):</span>
+        
+        <span class="n">logStr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0:s}</span><span class="s2">.</span><span class="si">{1:s}</span><span class="s2">: &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Start.&#39;</span><span class="p">))</span> 
+        
+        <span class="k">try</span><span class="p">:</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">dx</span> <span class="o">=</span> <span class="n">dx</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mx</span> <span class="o">=</span> <span class="n">mx</span>
+            
+            <span class="n">modellName</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dx</span><span class="o">.</span><span class="n">dbFile</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">: processing dx and mx ...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">modellName</span><span class="p">)))</span> 
+                                    
+            <span class="bp">self</span><span class="o">.</span><span class="n">dfLAYR</span><span class="o">=</span><span class="n">dxDecodeObjsData</span><span class="o">.</span><span class="n">Layr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dfWBLZ</span><span class="o">=</span><span class="n">dxDecodeObjsData</span><span class="o">.</span><span class="n">Wblz</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dfAGSN</span><span class="o">=</span><span class="n">dxDecodeObjsData</span><span class="o">.</span><span class="n">Agsn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span>
+                        
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mx</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>                
+                <span class="n">V3sErg</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dx</span><span class="o">.</span><span class="n">MxAdd</span><span class="p">(</span><span class="n">mx</span><span class="p">)</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">V3_ROHR</span><span class="o">=</span><span class="n">V3sErg</span><span class="p">[</span><span class="s1">&#39;V3_ROHR&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">V3_KNOT</span><span class="o">=</span><span class="n">V3sErg</span><span class="p">[</span><span class="s1">&#39;V3_KNOT&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">V3_FWVB</span><span class="o">=</span><span class="n">V3sErg</span><span class="p">[</span><span class="s1">&#39;V3_FWVB&#39;</span><span class="p">]</span>
+                                
+                <span class="k">try</span><span class="p">:</span>                                    
+                    <span class="n">t0</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mx</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> </span><span class="si">%X</span><span class="s1">.</span><span class="si">%f</span><span class="s1">&#39;</span><span class="p">))</span>
+                    <span class="n">QMAV</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;STAT&#39;</span>
+                                <span class="p">,</span><span class="s1">&#39;ROHR~*~*~*~QMAV&#39;</span>
+                                <span class="p">,</span><span class="n">t0</span>
+                                <span class="p">,</span><span class="n">t0</span>
+                                <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">V3_ROHR</span><span class="p">[</span><span class="s1">&#39;QMAVAbs&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">V3_ROHR</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">QMAV</span><span class="p">])</span> <span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>      
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s2">&quot;Constructing of V3_ROHR[&#39;QMAVAbs&#39;] ok so far.&quot;</span><span class="p">))</span>                                                      
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logStrTmp</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">Exception: Line: </span><span class="si">{:d}</span><span class="s2">: </span><span class="si">{!s:s}</span><span class="s2">: </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tb_lineno</span><span class="p">,</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">logStrTmp</span><span class="p">)</span> 
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Constructing col QMAVAbs=Abs(STAT ROHR~*~*~*~QMAV) in V3_ROHR failed.&#39;</span><span class="p">))</span>   
+                    
+                <span class="k">try</span><span class="p">:</span>                                                        
+                    <span class="n">VAV</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;STAT&#39;</span>
+                                <span class="p">,</span><span class="s1">&#39;ROHR~*~*~*~VAV&#39;</span>
+                                <span class="p">,</span><span class="n">t0</span>
+                                <span class="p">,</span><span class="n">t0</span>
+                                <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">V3_ROHR</span><span class="p">[</span><span class="s1">&#39;VAVAbs&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">V3_ROHR</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">VAV</span><span class="p">])</span> <span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>       
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s2">&quot;Constructing of V3_ROHR[&#39;VAVAbs&#39;] ok so far.&quot;</span><span class="p">))</span>                                                         
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logStrTmp</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">Exception: Line: </span><span class="si">{:d}</span><span class="s2">: </span><span class="si">{!s:s}</span><span class="s2">: </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tb_lineno</span><span class="p">,</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">logStrTmp</span><span class="p">)</span> 
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Constructing col VAVAbs=Abs(STAT ROHR~*~*~*~VAV) in V3_ROHR failed.&#39;</span><span class="p">))</span>       
+                    
+                <span class="k">try</span><span class="p">:</span>                                                        
+                    <span class="n">PHR</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;STAT&#39;</span>
+                                <span class="p">,</span><span class="s1">&#39;ROHR~*~*~*~PHR&#39;</span>
+                                <span class="p">,</span><span class="n">t0</span>
+                                <span class="p">,</span><span class="n">t0</span>
+                                <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">V3_ROHR</span><span class="p">[</span><span class="s1">&#39;PHRAbs&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">V3_ROHR</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">PHR</span><span class="p">])</span> <span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>     
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s2">&quot;Constructing of V3_ROHR[&#39;PHRAbs&#39;] ok so far.&quot;</span><span class="p">))</span>                                                           
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logStrTmp</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">Exception: Line: </span><span class="si">{:d}</span><span class="s2">: </span><span class="si">{!s:s}</span><span class="s2">: </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tb_lineno</span><span class="p">,</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">logStrTmp</span><span class="p">)</span> 
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Constructing col PHRAbs=Abs(STAT ROHR~*~*~*~PHR) in V3_ROHR failed.&#39;</span><span class="p">))</span>     
+
+                <span class="k">try</span><span class="p">:</span>                                                        
+                    <span class="n">JV</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;STAT&#39;</span>
+                                <span class="p">,</span><span class="s1">&#39;ROHR~*~*~*~JV&#39;</span>
+                                <span class="p">,</span><span class="n">t0</span>
+                                <span class="p">,</span><span class="n">t0</span>
+                                <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">V3_ROHR</span><span class="p">[</span><span class="s1">&#39;JVAbs&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">V3_ROHR</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">JV</span><span class="p">])</span> <span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>      
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s2">&quot;Constructing of V3_ROHR[&#39;JVAbs&#39;] ok so far.&quot;</span><span class="p">))</span>                                                          
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logStrTmp</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">Exception: Line: </span><span class="si">{:d}</span><span class="s2">: </span><span class="si">{!s:s}</span><span class="s2">: </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tb_lineno</span><span class="p">,</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">logStrTmp</span><span class="p">)</span> 
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Constructing col JVAbs=Abs(STAT ROHR~*~*~*~JV) in V3_ROHR failed.&#39;</span><span class="p">))</span>                              
+                    
+                <span class="k">try</span><span class="p">:</span>                                    
+                     
+                     <span class="n">W</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;STAT&#39;</span>
+                                 <span class="p">,</span><span class="s1">&#39;FWVB~*~*~*~W&#39;</span>
+                                 <span class="p">,</span><span class="n">t0</span>
+                                 <span class="p">,</span><span class="n">t0</span>
+                                 <span class="p">)</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">V3_FWVB</span><span class="p">[</span><span class="s1">&#39;W&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">V3_FWVB</span><span class="p">[</span><span class="n">W</span><span class="p">]</span>
+                     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s2">&quot;Constructing of V3_FWVB[&#39;W&#39;] ok so far.&quot;</span><span class="p">))</span>                                                      
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                     <span class="n">logStrTmp</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">Exception: Line: </span><span class="si">{:d}</span><span class="s2">: </span><span class="si">{!s:s}</span><span class="s2">: </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tb_lineno</span><span class="p">,</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">logStrTmp</span><span class="p">)</span> 
+                     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Constructing col W in V3_FWVB failed.&#39;</span><span class="p">))</span>   
+                
+                <span class="k">try</span><span class="p">:</span>                
+                    <span class="n">V_WBLZ</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dx</span><span class="o">.</span><span class="n">dataFrames</span><span class="p">[</span><span class="s1">&#39;V_WBLZ&#39;</span><span class="p">]</span>
+                    <span class="n">df</span><span class="o">=</span><span class="n">V_WBLZ</span><span class="p">[[</span><span class="s1">&#39;pk&#39;</span><span class="p">,</span><span class="s1">&#39;fkDE&#39;</span><span class="p">,</span><span class="s1">&#39;rk&#39;</span><span class="p">,</span><span class="s1">&#39;tk&#39;</span><span class="p">,</span><span class="s1">&#39;BESCHREIBUNG&#39;</span><span class="p">,</span><span class="s1">&#39;NAME&#39;</span><span class="p">,</span><span class="s1">&#39;TYP&#39;</span><span class="p">,</span><span class="s1">&#39;AKTIV&#39;</span><span class="p">,</span><span class="s1">&#39;IDIM&#39;</span><span class="p">]]</span>
+                    <span class="n">dfMx</span><span class="o">=</span><span class="n">mx</span><span class="o">.</span><span class="n">getVecAggsResultsForObjectType</span><span class="p">(</span><span class="n">Sir3sVecIDReExp</span><span class="o">=</span><span class="s1">&#39;^WBLZ~\*~\*~\*~&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">dfMx</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Adding MX-Results to V3_WBLZ: no such results.&#39;</span><span class="p">))</span>           
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">dfMx</span><span class="o">.</span><span class="n">columns</span><span class="o">=</span><span class="n">dfMx</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_flat_index</span><span class="p">()</span>                    
+                        <span class="bp">self</span><span class="o">.</span><span class="n">V3_WBLZ</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df</span><span class="p">,</span><span class="n">dfMx</span><span class="p">,</span><span class="n">left_on</span><span class="o">=</span><span class="s1">&#39;tk&#39;</span><span class="p">,</span><span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Adding MX-Results to V3_WBLZ ok so far.&#39;</span><span class="p">))</span>                 
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logStrTmp</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">Exception: Line: </span><span class="si">{:d}</span><span class="s2">: </span><span class="si">{!s:s}</span><span class="s2">: </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tb_lineno</span><span class="p">,</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">logStrTmp</span><span class="p">)</span> 
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Constructing V3_WBLZ failed.&#39;</span><span class="p">))</span> 
+                                
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Graph bauen    </span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="o">=</span><span class="n">nx</span><span class="o">.</span><span class="n">from_pandas_edgelist</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dx</span><span class="o">.</span><span class="n">dataFrames</span><span class="p">[</span><span class="s1">&#39;V3_VBEL&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(),</span> <span class="n">source</span><span class="o">=</span><span class="s1">&#39;NAME_i&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="s1">&#39;NAME_k&#39;</span><span class="p">,</span> <span class="n">edge_attr</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> 
+                <span class="n">nodeDct</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">V3_KNOT</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s1">&#39;index&#39;</span><span class="p">)</span>    
+                <span class="n">nodeDctNx</span><span class="o">=</span><span class="p">{</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;NAME&#39;</span><span class="p">]:</span><span class="n">value</span><span class="o">|</span><span class="p">{</span><span class="s1">&#39;idx&#39;</span><span class="p">:</span><span class="n">key</span><span class="p">}</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">nodeDct</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                <span class="n">nx</span><span class="o">.</span><span class="n">set_node_attributes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span><span class="n">nodeDctNx</span><span class="p">)</span>     
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Constructing NetworkX Graph G ok so far.&#39;</span><span class="p">))</span>                           
+                
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logStrTmp</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">Exception: Line: </span><span class="si">{:d}</span><span class="s2">: </span><span class="si">{!s:s}</span><span class="s2">: </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tb_lineno</span><span class="p">,</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">logStrTmp</span><span class="p">)</span> 
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Constructing NetworkX Graph G failed.&#39;</span><span class="p">))</span> 
+
+
+            <span class="k">try</span><span class="p">:</span>               
+                <span class="c1"># Darstellungskoordinaten des Netzes bezogen auf untere linke Ecke == 0,0</span>
+                <span class="n">vKnot</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dx</span><span class="o">.</span><span class="n">dataFrames</span><span class="p">[</span><span class="s1">&#39;V3_KNOT&#39;</span><span class="p">]</span>            
+                <span class="n">vKnotNet</span><span class="o">=</span><span class="n">vKnot</span><span class="p">[</span>    
+                <span class="p">(</span><span class="n">vKnot</span><span class="p">[</span><span class="s1">&#39;ID_CONT&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">vKnot</span><span class="p">[</span><span class="s1">&#39;IDPARENT_CONT&#39;</span><span class="p">])</span>
+                <span class="p">]</span>
+                <span class="n">xMin</span><span class="o">=</span><span class="n">vKnotNet</span><span class="p">[</span><span class="s1">&#39;XKOR&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                <span class="n">yMin</span><span class="o">=</span><span class="n">vKnotNet</span><span class="p">[</span><span class="s1">&#39;YKOR&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>            
+                <span class="bp">self</span><span class="o">.</span><span class="n">nodeposDctNx</span><span class="o">=</span><span class="p">{</span><span class="n">name</span><span class="p">:(</span><span class="n">x</span><span class="o">-</span><span class="n">xMin</span>
+                              <span class="p">,</span><span class="n">y</span><span class="o">-</span><span class="n">yMin</span><span class="p">)</span>
+                               <span class="k">for</span> <span class="n">name</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">vKnotNet</span><span class="p">[</span><span class="s1">&#39;NAME&#39;</span><span class="p">]</span>
+                                                  <span class="p">,</span><span class="n">vKnotNet</span><span class="p">[</span><span class="s1">&#39;XKOR&#39;</span><span class="p">]</span>
+                                                  <span class="p">,</span><span class="n">vKnotNet</span><span class="p">[</span><span class="s1">&#39;YKOR&#39;</span><span class="p">]</span>
+                                                  <span class="p">)</span>
+                <span class="p">}</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Constructing NetworkX Graph G nodeposDctNx ok so far.&#39;</span><span class="p">))</span>    
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logStrTmp</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">Exception: Line: </span><span class="si">{:d}</span><span class="s2">: </span><span class="si">{!s:s}</span><span class="s2">: </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tb_lineno</span><span class="p">,</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">logStrTmp</span><span class="p">)</span> 
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Constructing NetworkX Graph G nodeposDctNx failed.&#39;</span><span class="p">))</span> 
+                                            
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Graph Signalmodell bauen</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">GSig</span><span class="o">=</span><span class="n">nx</span><span class="o">.</span><span class="n">from_pandas_edgelist</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dx</span><span class="o">.</span><span class="n">dataFrames</span><span class="p">[</span><span class="s1">&#39;V3_RVBEL&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(),</span> <span class="n">source</span><span class="o">=</span><span class="s1">&#39;Kn_i&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="s1">&#39;Kn_k&#39;</span><span class="p">,</span> <span class="n">edge_attr</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">create_using</span><span class="o">=</span><span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">())</span>
+                <span class="n">nodeDct</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dx</span><span class="o">.</span><span class="n">dataFrames</span><span class="p">[</span><span class="s1">&#39;V3_RKNOT&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s1">&#39;index&#39;</span><span class="p">)</span>
+                <span class="n">nodeDctNx</span><span class="o">=</span><span class="p">{</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;Kn&#39;</span><span class="p">]:</span><span class="n">value</span><span class="o">|</span><span class="p">{</span><span class="s1">&#39;idx&#39;</span><span class="p">:</span><span class="n">key</span><span class="p">}</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">nodeDct</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                <span class="n">nx</span><span class="o">.</span><span class="n">set_node_attributes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GSig</span><span class="p">,</span><span class="n">nodeDctNx</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Constructing NetworkX Graph GSig ok so far.&#39;</span><span class="p">))</span>    
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logStrTmp</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">Exception: Line: </span><span class="si">{:d}</span><span class="s2">: </span><span class="si">{!s:s}</span><span class="s2">: </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tb_lineno</span><span class="p">,</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">logStrTmp</span><span class="p">)</span> 
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Constructing NetworkX Graph GSig failed.&#39;</span><span class="p">))</span>             
+      
+        <span class="k">except</span> <span class="n">dxWithMxError</span><span class="p">:</span>
+            <span class="k">raise</span>            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logStrFinal</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">Exception: Line: </span><span class="si">{:d}</span><span class="s2">: </span><span class="si">{!s:s}</span><span class="s2">: </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tb_lineno</span><span class="p">,</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">logStrFinal</span><span class="p">)</span> 
+            <span class="k">raise</span> <span class="n">dxWithMxError</span><span class="p">(</span><span class="n">logStrFinal</span><span class="p">)</span>                       
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;_Done.&#39;</span><span class="p">))</span>            </div>
+        
+<div class="viewcode-block" id="readDxAndMxError"><a class="viewcode-back" href="../functions.html#dxAndMxHelperFcts.readDxAndMxError">[docs]</a><span class="k">class</span> <span class="nc">readDxAndMxError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="readDxAndMx"><a class="viewcode-back" href="../functions.html#dxAndMxHelperFcts.readDxAndMx">[docs]</a><span class="k">def</span> <span class="nf">readDxAndMx</span><span class="p">(</span><span class="n">dbFile</span>
+                <span class="p">,</span><span class="n">forceSir3sRead</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">,</span><span class="n">preventPklDump</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">,</span><span class="n">maxRecords</span><span class="o">=</span><span class="kc">None</span>
+                <span class="p">,</span><span class="n">mxsVecsResults2MxDf</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads Model and Results.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        dbFile (str): modell.db3 or modell.mdb</span>
+<span class="sd">            - Database: read into  ==&gt; Dx-Object</span>
+<span class="sd">            - Results: read into ==&gt; Mx-Object (corresponding M-1-0-1.1 results are read if available)</span>
+<span class="sd">                - corresponding := using SYSTEMKONFIG and VIEW_MODELLE the M-1-0-1.1 resultfile is determined </span>
+<span class="sd">        forceSir3sRead (bool, optional): Defaults to False.</span>
+<span class="sd">            - if dbFilename-dx.pkl exists and is newer than dbFile, dbFilename-dx.pkl is read instead of dbFile</span>
+<span class="sd">            - if dbFilename-mx-....pkl exists and is newer than corresponding mxFile, dbFilename-mx-....pkl is read instead of mxFile</span>
+<span class="sd">            - if dbFilename-mx.pkl exists and is newer than corresponding mxFile, dbFilename-mx.pkl is read instead of constructing m</span>
+<span class="sd">            - if True, dbFile is read even if dbFilename-dx.pkl exists and is newer than dbFile, and mxFile is read even if dbFilename-mx-....pkl exists and is newer than corresponding mxFile</span>
+<span class="sd">        preventPklDump (bool, optional): Defaults to False.</span>
+<span class="sd">            - if dbFile is read, dbFilename-dx.pkl is written</span>
+<span class="sd">            - if mxFile is read, dbFilename-mx-....pkl is written</span>
+<span class="sd">            - if mxFile is read, dbFilename-m.pkl is written</span>
+<span class="sd">            - if True, no pklDumps are written; existing pklDumps are deleted</span>
+<span class="sd">        </span>
+<span class="sd">        maxRecords (list, optional): Defaults to None.</span>
+<span class="sd">            - Read MX-Results. </span>
+<span class="sd">            - If &gt;0, read MX-Results, but only maxRecord Times (use maxRecord=1 to read only STAT). </span>
+<span class="sd">            - If 0, do not read MX-Results.</span>
+<span class="sd">        </span>
+<span class="sd">        mxsVecsResults2MxDf (list, optional): Defaults to None.</span>
+<span class="sd">            - mx.df contains no Results which in SIR 3S are called Vector-Results. </span>
+<span class="sd">            - List with regExps for Vector-Results requested to be in mx.df; i.e. [&#39;ROHR~&#39;,&#39;&#39;,...]. </span>
+<span class="sd">            - Note that integrating Vector-Results in mx.df can increase mx.df&#39;s memory-usage significantly; running out of physical memory available is possible.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">    dxWithMx-Object</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; try:</span>
+<span class="sd">    ...     from PT3S import dxAndMxHelperFcts</span>
+<span class="sd">    ... except ImportError:</span>
+<span class="sd">    ...     import dxAndMxHelperFcts</span>
+<span class="sd">    &gt;&gt;&gt; m = dxAndMxHelperFcts.readDxAndMx(r&#39;Examples/DistrictHeating.db3&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; m</span>
+<span class="sd">    &lt;PT3S.dxAndMxHelperFcts.dxWithMx at 0x1e595c23550&gt;       </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Reads Model and Results.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        dbFile: modell.db3 or modell.mdb</span>
+<span class="sd">                Database: read into  ==&gt; Dx-Object</span>
+<span class="sd">                Results: read into ==&gt; Mx-Object (corresponding M-1-0-1.1 results are read if available)</span>
+<span class="sd">                    corresponding := using SYSTEMKONFIG and VIEW_MODELLE the M-1-0-1.1 resultfile is determined </span>
+<span class="sd">        forceSir3sRead:</span>
+<span class="sd">            False (default):</span>
+<span class="sd">                if dbFilename-dx.pkl     exists and is newer than               dbFile, dbFilename-dx.pkl     is read instead of dbFile</span>
+<span class="sd">                if dbFilename-mx-....pkl exists and is newer than corresponding mxFile, dbFilename-mx-....pkl is read instead of mxFile</span>
+<span class="sd">                if dbFilename-mx.pkl     exists and is newer than corresponding mxFile, dbFilename-mx.pkl     is read instead of constructing m</span>
+<span class="sd">            True:</span>
+<span class="sd">                dbFile is read even if dbFilename-dx.pkl     exists and is newer than               dbFile</span>
+<span class="sd">                mxFile is read even if dbFilename-mx-....pkl exists and is newer than corresponding mxFile</span>
+<span class="sd">        preventPklDump:</span>
+<span class="sd">            False (default):</span>
+<span class="sd">                if dbFile is read, dbFilename-dx.pkl     is written</span>
+<span class="sd">                if mxFile is read, dbFilename-mx-....pkl is written</span>
+<span class="sd">                if mxFile is read, dbFilename-m.pkl      is written</span>
+<span class="sd">            True:</span>
+<span class="sd">                no pklDumps are written; existing pklDumps are deleted           </span>
+<span class="sd">        maxRecords:</span>
+<span class="sd">            None (default): read MX-Results </span>
+<span class="sd">            &gt;0: read MX-Results, but only maxRecord Times (use maxRecord=1 to read only STAT)</span>
+<span class="sd">            0: do not read MX-Results</span>
+<span class="sd">        mxsVecsResults2MxDf:</span>
+<span class="sd">            None (default): mx.df contains no Results which in SIR 3S are called Vector-Results</span>
+<span class="sd">            list with regExps for Vector-Results requested to be in mx.df; i.e. [&#39;ROHR~&#39;,&#39;&#39;,...]</span>
+<span class="sd">            Note that integrating Vector-Results in mx.df can increase mx.df&#39;s memory-usage significantly; running out of physical memory available is possible ...</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dxWithMx-Object    </span>
+<span class="sd">    &gt;&gt;&gt; try:</span>
+<span class="sd">    ...     from PT3S import dxAndMxHelperFcts</span>
+<span class="sd">    ... except ImportError:</span>
+<span class="sd">    ...     import dxAndMxHelperFcts</span>
+<span class="sd">    &gt;&gt;&gt; m = dxAndMxHelperFcts.readDxAndMx(r&#39;Examples/DistrictHeating.db3&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; m</span>
+<span class="sd">    &lt;PT3S.dxAndMxHelperFcts.dxWithMx at 0x1e595c23550&gt;        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">importlib</span>
+    <span class="kn">import</span> <span class="nn">glob</span>
+    
+    <span class="n">dx</span><span class="o">=</span><span class="kc">None</span>
+    <span class="n">mx</span><span class="o">=</span><span class="kc">None</span>
+    
+    <span class="n">logStr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0:s}</span><span class="s2">.</span><span class="si">{1:s}</span><span class="s2">: &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;Start.&#39;</span><span class="p">))</span>     
+    
+    <span class="k">try</span><span class="p">:</span>
+        
+        <span class="n">dx</span><span class="o">=</span><span class="kc">None</span>
+        <span class="n">mx</span><span class="o">=</span><span class="kc">None</span>
+            
+        <span class="n">dbFileDxPklRead</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">dbFilename</span><span class="p">,</span><span class="n">ext</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">dbFile</span><span class="p">)</span>
+        <span class="n">dbFileDxPkl</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">-dx.pkl&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dbFilename</span><span class="p">)</span>        
+                
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">forceSir3sRead</span><span class="p">:</span>            
+            <span class="c1"># Pkl existiert</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dbFileDxPkl</span><span class="p">):</span>                
+                <span class="c1"># ist eine Datei und lesbar</span>
+                <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">dbFileDxPkl</span><span class="p">)</span> <span class="ow">and</span> <span class="n">access</span><span class="p">(</span><span class="n">dbFileDxPkl</span><span class="p">,</span><span class="n">R_OK</span><span class="p">):</span>
+                    <span class="c1"># ist neuer als die Modelldatenbank</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getctime</span><span class="p">(</span><span class="n">dbFile</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getctime</span><span class="p">(</span><span class="n">dbFileDxPkl</span><span class="p">):</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileDxPkl:s}</span><span class="s2"> newer than dbFile and therefore read ...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                             <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                            <span class="p">,</span><span class="n">dbFileDxPkl</span><span class="o">=</span><span class="n">dbFileDxPkl</span>
+                            <span class="p">,</span><span class="n">dbFile</span><span class="o">=</span><span class="n">dbFile</span>
+                            <span class="p">)</span>
+                            <span class="p">)</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dbFileDxPkl</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>  
+                                <span class="n">dx</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  
+                            <span class="n">dbFileDxPklRead</span><span class="o">=</span><span class="kc">True</span>
+                        <span class="k">except</span><span class="p">:</span>                            
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileDxPkl:s}</span><span class="s2"> read error! - reading SIR 3S raw data ...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                 <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                                <span class="p">,</span><span class="n">dbFileDxPkl</span><span class="o">=</span><span class="n">dbFileDxPkl</span>                                
+                                <span class="p">)</span>
+                                <span class="p">)</span>
+
+                            
+                                    
+        <span class="c1">### Modell lesen</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dbFileDxPklRead</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">dx</span><span class="o">=</span><span class="n">Dx</span><span class="o">.</span><span class="n">Dx</span><span class="p">(</span><span class="n">dbFile</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">Dx</span><span class="o">.</span><span class="n">DxError</span><span class="p">:</span>
+                <span class="n">logStrFinal</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{logStr:s}</span><span class="s2">dbFile: </span><span class="si">{dbFile:s}</span><span class="s2">: DxError!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span><span class="p">,</span><span class="n">dbFile</span><span class="o">=</span><span class="n">dbFile</span><span class="p">)</span>     
+                <span class="k">raise</span> <span class="n">readDxAndMxError</span><span class="p">(</span><span class="n">logStrFinal</span><span class="p">)</span>  
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">preventPklDump</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">dbFileDxPkl</span><span class="p">):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileDxPkl:s}</span><span class="s2"> exists and is overwritten...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                         <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                        <span class="p">,</span><span class="n">dbFileDxPkl</span><span class="o">=</span><span class="n">dbFileDxPkl</span>                        
+                        <span class="p">)</span>
+                        <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileDxPkl:s}</span><span class="s2"> is written ...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                         <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                        <span class="p">,</span><span class="n">dbFileDxPkl</span><span class="o">=</span><span class="n">dbFileDxPkl</span>                        
+                        <span class="p">)</span>
+                        <span class="p">)</span>                                                                
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dbFileDxPkl</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>  
+                    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span><span class="n">f</span><span class="p">)</span>           
+                    
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">dbFileDxPkl</span><span class="p">):</span>
+                          <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileDxPkl:s}</span><span class="s2"> exists and is deleted...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                               <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                              <span class="p">,</span><span class="n">dbFileDxPkl</span><span class="o">=</span><span class="n">dbFileDxPkl</span>                        
+                              <span class="p">)</span>
+                              <span class="p">)</span>
+                          <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">dbFileDxPkl</span><span class="p">)</span>                    
+                                                
+        <span class="c1">### Ergebnisse nicht lesen?!         </span>
+        <span class="k">if</span> <span class="n">maxRecords</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>            
+            <span class="n">logStrFinal</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{logStr:s}</span><span class="s2">dbFile: </span><span class="si">{dbFile:s}</span><span class="s2">: maxRecords==0: do not read MX-Results...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span><span class="p">,</span><span class="n">dbFile</span><span class="o">=</span><span class="n">dbFile</span><span class="p">)</span>     
+            <span class="k">raise</span> <span class="n">readDxAndMxError</span><span class="p">(</span><span class="n">logStrFinal</span><span class="p">)</span>               
+                             
+        <span class="c1">### mx Datenquelle bestimmen</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStrPrefix:s}</span><span class="s2">dbFile rel: </span><span class="si">{dbFile:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStrPrefix</span><span class="o">=</span><span class="n">logStr</span><span class="p">,</span><span class="n">dbFile</span><span class="o">=</span><span class="n">dx</span><span class="o">.</span><span class="n">dbFile</span><span class="p">))</span>
+        <span class="n">dbFile</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">dx</span><span class="o">.</span><span class="n">dbFile</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStrPrefix:s}</span><span class="s2">dbFile abs: </span><span class="si">{dbFile:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStrPrefix</span><span class="o">=</span><span class="n">logStr</span><span class="p">,</span><span class="n">dbFile</span><span class="o">=</span><span class="n">dbFile</span><span class="p">))</span>
+
+        <span class="c1"># wDir der Db</span>
+        <span class="n">sk</span><span class="o">=</span><span class="n">dx</span><span class="o">.</span><span class="n">dataFrames</span><span class="p">[</span><span class="s1">&#39;SYSTEMKONFIG&#39;</span><span class="p">]</span>
+        <span class="n">wDirDb</span><span class="o">=</span><span class="n">sk</span><span class="p">[</span><span class="n">sk</span><span class="p">[</span><span class="s1">&#39;ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mf">1.</span><span class="p">])][</span><span class="s1">&#39;WERT&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStrPrefix:s}</span><span class="s2"> wDirAusDb: </span><span class="si">{wDirDb:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStrPrefix</span><span class="o">=</span><span class="n">logStr</span><span class="p">,</span><span class="n">wDirDb</span><span class="o">=</span><span class="n">wDirDb</span><span class="p">))</span>
+        <span class="n">wDir</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">dbFile</span><span class="p">),</span><span class="n">wDirDb</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStrPrefix:s}</span><span class="s2">  wDir abs: </span><span class="si">{wDir:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStrPrefix</span><span class="o">=</span><span class="n">logStr</span><span class="p">,</span><span class="n">wDir</span><span class="o">=</span><span class="n">wDir</span><span class="p">))</span>
+
+    
+        <span class="c1"># SYSTEMKONFIG ID 3:</span>
+        <span class="c1"># Modell-Pk des in QGIS anzuzeigenden Modells (wird von den QGIS-Views ausgewertet)</span>
+        <span class="c1"># diese xk wird hier verwendet um das Modell in der DB zu identifizieren dessen Ergebnisse geliefert werden sollen</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">vm</span><span class="o">=</span><span class="n">dx</span><span class="o">.</span><span class="n">dataFrames</span><span class="p">[</span><span class="s1">&#39;VIEW_MODELLE&#39;</span><span class="p">]</span>
+            <span class="n">modelXk</span><span class="o">=</span><span class="n">sk</span><span class="p">[</span><span class="n">sk</span><span class="p">[</span><span class="s1">&#39;ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mf">3.</span><span class="p">])][</span><span class="s1">&#39;WERT&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">vms</span><span class="o">=</span><span class="n">vm</span><span class="p">[</span><span class="n">vm</span><span class="p">[</span><span class="s1">&#39;pk&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="n">modelXk</span><span class="p">])]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>   
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}</span><span class="s2"> SYSTEMKONFIG ID 3 not defined. Value (ID==3) is supposed to define the Model which results are expected in mx. Now the 1st Model in VIEW_MODELLE is used...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span><span class="p">))</span>
+            <span class="n">vms</span><span class="o">=</span><span class="n">vm</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  
+                                
+        <span class="n">wDirMx</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">wDir</span><span class="p">,</span><span class="n">vms</span><span class="o">.</span><span class="n">Basis</span><span class="p">),</span><span class="n">vms</span><span class="o">.</span><span class="n">Variante</span><span class="p">),</span><span class="n">vms</span><span class="o">.</span><span class="n">BZ</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStrPrefix:s}</span><span class="s2">wDirMx abs: </span><span class="si">{wDirMx:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStrPrefix</span><span class="o">=</span><span class="n">logStr</span><span class="p">,</span><span class="n">wDirMx</span><span class="o">=</span><span class="n">wDirMx</span><span class="p">))</span>
+                        
+        <span class="n">wDirMxMx1Content</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">wDirMx</span><span class="p">,</span><span class="s1">&#39;*.MX1&#39;</span><span class="p">))</span>
+        <span class="n">wDirMxMx1Content</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="n">wDirMxMx1Content</span><span class="p">)</span> 
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">wDirMxMx1Content</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStrPrefix:s}</span><span class="s2">Mehr als 1 (</span><span class="si">{anz:d}</span><span class="s2">) MX1 in wDirMx vorhanden.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">logStrPrefix</span><span class="o">=</span><span class="n">logStr</span><span class="p">,</span><span class="n">anz</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">wDirMxMx1Content</span><span class="p">)))</span>
+        <span class="n">mx1File</span><span class="o">=</span> <span class="n">wDirMxMx1Content</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStrPrefix:s}</span><span class="s2">mx1File: </span><span class="si">{mx1File:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStrPrefix</span><span class="o">=</span><span class="n">logStr</span><span class="p">,</span><span class="n">mx1File</span><span class="o">=</span><span class="n">mx1File</span><span class="p">))</span>
+        
+        
+        <span class="n">dbFileMxPklRead</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">dbFileMxPkl</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">-mx-</span><span class="si">{:s}</span><span class="s2">.pkl&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dbFilename</span><span class="p">,</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;\W+&#39;</span><span class="p">,</span><span class="s1">&#39;_&#39;</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">mx1File</span><span class="p">)))</span>        
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStrPrefix:s}</span><span class="s2">zugeh. dbFileMxPkl-File: </span><span class="si">{dbFileMxPkl:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStrPrefix</span><span class="o">=</span><span class="n">logStr</span><span class="p">,</span><span class="n">dbFileMxPkl</span><span class="o">=</span><span class="n">dbFileMxPkl</span><span class="p">))</span>
+                
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">forceSir3sRead</span><span class="p">:</span>            
+            <span class="c1"># Pkl existiert</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dbFileMxPkl</span><span class="p">):</span>                
+                <span class="c1"># ist eine Datei und lesbar</span>
+                <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">dbFileMxPkl</span><span class="p">)</span> <span class="ow">and</span> <span class="n">access</span><span class="p">(</span><span class="n">dbFileMxPkl</span><span class="p">,</span><span class="n">R_OK</span><span class="p">):</span>
+                    <span class="c1"># ist neuer als mx1File</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getctime</span><span class="p">(</span><span class="n">mx1File</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getctime</span><span class="p">(</span><span class="n">dbFileMxPkl</span><span class="p">):</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileMxPkl:s}</span><span class="s2"> newer than mxFile and therefore read ...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                             <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                            <span class="p">,</span><span class="n">dbFileMxPkl</span><span class="o">=</span><span class="n">dbFileMxPkl</span>
+                            <span class="p">,</span><span class="n">mx1File</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">mx1File</span><span class="p">))</span>
+                            <span class="p">)</span>
+                            <span class="p">)</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dbFileMxPkl</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>  
+                                <span class="n">mx</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  
+                            <span class="n">dbFileMxPklRead</span><span class="o">=</span><span class="kc">True</span>       
+                        <span class="k">except</span><span class="p">:</span>                            
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileMxPkl:s}</span><span class="s2"> read error! - reading SIR 3S raw data ...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                 <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                                <span class="p">,</span><span class="n">dbFileMxPkl</span><span class="o">=</span><span class="n">dbFileMxPkl</span>                                
+                                <span class="p">)</span>
+                                <span class="p">)</span>                        
+                        
+                        
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dbFileMxPklRead</span><span class="p">:</span>
+        
+            <span class="c1">### Modellergebnisse lesen</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">mx</span><span class="o">=</span><span class="n">Mx</span><span class="o">.</span><span class="n">Mx</span><span class="p">(</span><span class="n">mx1File</span><span class="p">,</span><span class="n">maxRecords</span><span class="o">=</span><span class="n">maxRecords</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;MX read ok so far.&#39;</span><span class="p">))</span>   
+            <span class="k">except</span> <span class="n">Mx</span><span class="o">.</span><span class="n">MxError</span><span class="p">:</span>
+                <span class="n">logStrFinal</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{logStr:s}</span><span class="s2">mx1File: </span><span class="si">{mx1File:s}</span><span class="s2">: MxError!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span><span class="p">,</span><span class="n">mx1File</span><span class="o">=</span><span class="n">mx1File</span><span class="p">)</span>     
+                <span class="k">raise</span> <span class="n">readDxAndMxError</span><span class="p">(</span><span class="n">logStrFinal</span><span class="p">)</span>     
+                
+            <span class="c1">### Vector-Results</span>
+            <span class="k">if</span> <span class="n">mxsVecsResults2MxDf</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>                
+                    <span class="n">df</span><span class="o">=</span><span class="n">mx</span><span class="o">.</span><span class="n">readMxsVecsResultsForObjectType</span><span class="p">(</span><span class="n">Sir3sVecIDReExp</span><span class="o">=</span><span class="n">mxsVecsResults2MxDf</span><span class="p">,</span><span class="n">flatIndex</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>                    
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}</span><span class="s2"> df from readMxsVecsResultsForObjectType: </span><span class="si">{dfStr:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span><span class="p">,</span><span class="n">dfStr</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">()))</span>
+                    
+                    <span class="c1"># Kanalweise bearbeiten</span>
+                    <span class="n">vecChannels</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">1</span><span class="p">))))</span>
+                    
+                    <span class="n">V3_VBEL</span><span class="o">=</span><span class="n">dx</span><span class="o">.</span><span class="n">dataFrames</span><span class="p">[</span><span class="s1">&#39;V3_VBEL&#39;</span><span class="p">]</span>
+                    
+                    
+                    <span class="n">mxVecChannelDfs</span><span class="o">=</span><span class="p">{}</span>
+                    <span class="k">for</span> <span class="n">vecChannel</span> <span class="ow">in</span> <span class="n">vecChannels</span><span class="p">:</span>
+                        
+                        <span class="c1">#print(vecChannel)</span>
+                        
+                        <span class="n">dfVecChannel</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span><span class="n">vecChannel</span><span class="p">,</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)),:]</span>
+                        <span class="n">dfVecChannel</span><span class="o">.</span><span class="n">index</span><span class="o">=</span><span class="n">dfVecChannel</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;TIME&#39;</span><span class="p">)</span>
+                        <span class="n">dfVecChannel</span><span class="o">=</span><span class="n">dfVecChannel</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">how</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+                        
+                        <span class="n">mObj</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">Mx</span><span class="o">.</span><span class="n">regExpSir3sVecIDObjAtr</span><span class="p">,</span><span class="n">vecChannel</span><span class="p">)</span>                    
+                        <span class="n">OBJTYPE</span><span class="p">,</span><span class="n">ATTRTYPE</span><span class="o">=</span><span class="n">mObj</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+                               
+                        <span class="c1"># Zeiten aendern wg. spaeterem concat mit mx.df</span>
+                        <span class="n">dfVecChannel</span><span class="o">.</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">tz</span><span class="o">=</span><span class="s1">&#39;UTC&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">dfVecChannel</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+                        
+                        <span class="k">if</span> <span class="n">OBJTYPE</span> <span class="o">==</span> <span class="s1">&#39;KNOT&#39;</span><span class="p">:</span>
+                            <span class="n">dfOBJT</span><span class="o">=</span><span class="n">dx</span><span class="o">.</span><span class="n">dataFrames</span><span class="p">[</span><span class="s1">&#39;V_BVZ_KNOT&#39;</span><span class="p">][[</span><span class="s1">&#39;tk&#39;</span><span class="p">,</span><span class="s1">&#39;NAME&#39;</span><span class="p">]]</span>
+                            <span class="n">dfOBJT</span><span class="o">.</span><span class="n">index</span><span class="o">=</span><span class="n">dfOBJT</span><span class="p">[</span><span class="s1">&#39;tk&#39;</span><span class="p">]</span>
+                            <span class="n">colRenDctToNamesMxDf</span><span class="o">=</span><span class="p">{</span><span class="n">col</span><span class="p">:</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">~</span><span class="si">{!s:s}</span><span class="s2">~*~</span><span class="si">{:s}</span><span class="s2">~</span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">OBJTYPE</span><span class="p">,</span><span class="n">dfOBJT</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">col</span><span class="p">,</span><span class="s1">&#39;NAME&#39;</span><span class="p">],</span><span class="n">col</span><span class="p">,</span><span class="n">ATTRTYPE</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">dfVecChannel</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">()}</span>
+                        <span class="k">else</span><span class="p">:</span>    
+                            <span class="n">dfOBJT</span><span class="o">=</span><span class="n">V3_VBEL</span><span class="p">[[</span><span class="s1">&#39;pk&#39;</span><span class="p">,</span><span class="s1">&#39;NAME_i&#39;</span><span class="p">,</span><span class="s1">&#39;NAME_k&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">OBJTYPE</span><span class="p">,</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)),:]</span>
+                            <span class="n">dfOBJT</span><span class="o">.</span><span class="n">index</span><span class="o">=</span><span class="n">dfOBJT</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># die OBJID; xk</span>
+                            <span class="n">colRenDctToNamesMxDf</span><span class="o">=</span><span class="p">{</span><span class="n">col</span><span class="p">:</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">~</span><span class="si">{!s:s}</span><span class="s2">~</span><span class="si">{!s:s}</span><span class="s2">~</span><span class="si">{:s}</span><span class="s2">~</span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">OBJTYPE</span><span class="p">,</span><span class="n">dfOBJT</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">col</span><span class="p">,</span><span class="s1">&#39;NAME_i&#39;</span><span class="p">],</span><span class="n">dfOBJT</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">col</span><span class="p">,</span><span class="s1">&#39;NAME_k&#39;</span><span class="p">],</span><span class="n">col</span><span class="p">,</span><span class="n">ATTRTYPE</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">dfVecChannel</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">()}</span>
+                                  
+                        <span class="n">dfVecChannel</span><span class="o">=</span><span class="n">dfVecChannel</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">colRenDctToNamesMxDf</span><span class="p">)</span>
+                        
+                        <span class="n">mxVecChannelDfs</span><span class="p">[</span><span class="n">vecChannel</span><span class="p">]</span><span class="o">=</span><span class="n">dfVecChannel</span>         
+                                            
+                    <span class="n">l</span><span class="o">=</span><span class="n">mx</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2"> Anzahl der Spalten vor Ergaenzung der Vektorspalten: </span><span class="si">{:d}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)))</span>
+                        
+                    <span class="n">mx</span><span class="o">.</span><span class="n">df</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">mx</span><span class="o">.</span><span class="n">df</span><span class="p">]</span>
+                    <span class="o">+</span><span class="nb">list</span><span class="p">(</span><span class="n">mxVecChannelDfs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>               
+                    <span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    
+                    <span class="n">l</span><span class="o">=</span><span class="n">mx</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2"> Anzahl der Spalten nach Ergaenzung der Vektorspalten: </span><span class="si">{:d}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)))</span>                
+                    
+                    <span class="c1"># Test auf mehrfach vorkommende Spaltennamen                </span>
+                    <span class="n">l</span><span class="o">=</span><span class="n">mx</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="n">mx</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()]</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2"> Anzahl der Spaltennamen die mehrfach vorkommen: </span><span class="si">{:d}</span><span class="s2">; eliminieren der mehrfach vorkommenden ... &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)))</span>
+                        <span class="n">mx</span><span class="o">.</span><span class="n">df</span> <span class="o">=</span> <span class="n">mx</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="o">~</span><span class="n">mx</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()]</span>
+                           
+                    <span class="n">l</span><span class="o">=</span><span class="n">mx</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>    
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2"> Anzahl der Spalten nach Ergaenzung der Vektorspalten und nach eliminieren der mehrfach vorkommenden: </span><span class="si">{:d}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)))</span>
+                        
+                        
+                <span class="k">except</span> <span class="n">Mx</span><span class="o">.</span><span class="n">MxError</span><span class="p">:</span>
+                    <span class="n">logStrFinal</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{logStr:s}</span><span class="s2">mxsVecsResults2MxDf failed&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span><span class="p">)</span>     
+                    <span class="k">raise</span> <span class="n">readDxAndMxError</span><span class="p">(</span><span class="n">logStrFinal</span><span class="p">)</span>             
+        
+        
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">preventPklDump</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">dbFileMxPkl</span><span class="p">):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileMxPkl:s}</span><span class="s2"> exists and is overwritten...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                         <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                        <span class="p">,</span><span class="n">dbFileMxPkl</span><span class="o">=</span><span class="n">dbFileMxPkl</span>                        
+                        <span class="p">)</span>
+                        <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileMxPkl:s}</span><span class="s2"> is written ...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                         <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                        <span class="p">,</span><span class="n">dbFileMxPkl</span><span class="o">=</span><span class="n">dbFileMxPkl</span>                        
+                        <span class="p">)</span>
+                        <span class="p">)</span>                                                                
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dbFileMxPkl</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>  
+                    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">mx</span><span class="p">,</span><span class="n">f</span><span class="p">)</span>     
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">dbFileMxPkl</span><span class="p">):</span>
+                      <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileMxPkl:s}</span><span class="s2"> exists and is deleted...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                           <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                          <span class="p">,</span><span class="n">dbFileMxPkl</span><span class="o">=</span><span class="n">dbFileMxPkl</span>                        
+                          <span class="p">)</span>
+                          <span class="p">)</span>
+                      <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">dbFileMxPkl</span><span class="p">)</span>
+                      
+                        
+
+        <span class="n">dbFileDxMxPklRead</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">dbFileDxMxPkl</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">-m.pkl&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dbFilename</span><span class="p">)</span>        
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStrPrefix:s}</span><span class="s2">zugeh. dbFileDxMxPkl-File: </span><span class="si">{dbFileDxMxPkl:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStrPrefix</span><span class="o">=</span><span class="n">logStr</span><span class="p">,</span><span class="n">dbFileDxMxPkl</span><span class="o">=</span><span class="n">dbFileDxMxPkl</span><span class="p">))</span>
+                
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">forceSir3sRead</span><span class="p">:</span>            
+            <span class="c1"># Pkl existiert</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dbFileDxMxPkl</span><span class="p">):</span>                
+                <span class="c1"># ist eine Datei und lesbar</span>
+                <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">dbFileDxMxPkl</span><span class="p">)</span> <span class="ow">and</span> <span class="n">access</span><span class="p">(</span><span class="n">dbFileDxMxPkl</span><span class="p">,</span><span class="n">R_OK</span><span class="p">):</span>
+                    <span class="c1"># ist neuer als mx1File</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getctime</span><span class="p">(</span><span class="n">mx1File</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getctime</span><span class="p">(</span><span class="n">dbFileDxMxPkl</span><span class="p">):</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileDxMxPkl:s}</span><span class="s2"> newer than </span><span class="si">{mx1File:s}</span><span class="s2"> and therefore read ...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                             <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                            <span class="p">,</span><span class="n">dbFileDxMxPkl</span><span class="o">=</span><span class="n">dbFileDxMxPkl</span>
+                            <span class="p">,</span><span class="n">mx1File</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">mx1File</span><span class="p">))</span>
+                            <span class="p">)</span>
+                            <span class="p">)</span>                        
+                        <span class="k">try</span><span class="p">:</span>
+                           <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dbFileDxMxPkl</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>  
+                               <span class="n">m</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  
+                           <span class="n">dbFileDxMxPklRead</span><span class="o">=</span><span class="kc">True</span>    
+                        <span class="k">except</span><span class="p">:</span>                            
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileDxMxPkl:s}</span><span class="s2"> read error! - processing dx and mx ...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                 <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                                <span class="p">,</span><span class="n">dbFileDxMxPkl</span><span class="o">=</span><span class="n">dbFileDxMxPkl</span>                                
+                                <span class="p">)</span>
+                                <span class="p">)</span>                            
+                        
+                        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dbFileDxMxPklRead</span><span class="p">:</span>
+            <span class="c1">#</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">dxWithMx</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span><span class="n">mx</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">preventPklDump</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">dbFileDxMxPkl</span><span class="p">):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileDxMxPkl:s}</span><span class="s2"> exists and is overwritten...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                         <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                        <span class="p">,</span><span class="n">dbFileDxMxPkl</span><span class="o">=</span><span class="n">dbFileDxMxPkl</span>                        
+                        <span class="p">)</span>
+                        <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileDxMxPkl:s}</span><span class="s2"> is written ...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                         <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                        <span class="p">,</span><span class="n">dbFileDxMxPkl</span><span class="o">=</span><span class="n">dbFileDxMxPkl</span>                        
+                        <span class="p">)</span>
+                        <span class="p">)</span>                                                                
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dbFileDxMxPkl</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>  
+                    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">f</span><span class="p">)</span>       
+            
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">dbFileDxMxPkl</span><span class="p">):</span>
+                          <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{logStr:s}{dbFileDxMxPkl:s}</span><span class="s2"> exists and is deleted...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                               <span class="n">logStr</span><span class="o">=</span><span class="n">logStr</span>
+                              <span class="p">,</span><span class="n">dbFileDxMxPkl</span><span class="o">=</span><span class="n">dbFileDxMxPkl</span>                        
+                              <span class="p">)</span>
+                              <span class="p">)</span>
+                          <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">dbFileDxMxPkl</span><span class="p">)</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span>
+ 
+     <span class="c1">### Modellergebnisse lesen                        </span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logStrFinal</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">Exception: Line: </span><span class="si">{:d}</span><span class="s2">: </span><span class="si">{!s:s}</span><span class="s2">: </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tb_lineno</span><span class="p">,</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">logStrFinal</span><span class="p">)</span>         
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0:s}{1:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logStr</span><span class="p">,</span><span class="s1">&#39;_Done.&#39;</span><span class="p">))</span>  
+        <span class="k">return</span> <span class="n">m</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">PT3S</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../functions.html">Functions</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2024, 3S Consult GmbH.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,10 @@
+Installation
+================================
+
+How to install PT3S using pip (on Windows):
+
+1. Step: Open CMD
+2. Step: Type 'pip install pt3s'
+
+
+
